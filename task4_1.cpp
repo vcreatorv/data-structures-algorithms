@@ -1,6 +1,7 @@
 #include <iostream>
 #include <algorithm>
 
+
 class Video {
 public:
     int likes;
@@ -33,6 +34,8 @@ struct ArrayIterator {
     int size;
     int curPos;
 
+    ArrayIterator() : arr(nullptr), size(0), curPos(0) {}
+
     ArrayIterator(const T* arr, int size) : arr(arr), size(size), curPos(0) {}
 
     const T& current() const {
@@ -46,19 +49,31 @@ struct ArrayIterator {
     bool hasNext() const {
         return curPos < size;
     }
+
+    friend std::ostream& operator<<(std::ostream& os, const ArrayIterator& it) {
+        os << it.current();
+        return os;
+    }
+};
+
+template <typename T, typename Comparator = std::less<T>>
+struct ArrayIteratorComparator {
+    bool operator()(const ArrayIterator<T>& it1, const ArrayIterator<T>& it2, Comparator cmp = Comparator()) {
+        return cmp(it1.current(), it2.current());
+    }
 };
 
 template <typename T, typename Comparator = std::less<T>>
 class Heap {
 private:
-    ArrayIterator<T>** data;
+    T* data;
     int capacity;
     int size;
     Comparator cmp;
 
     void resize() {
         int newCapacity = capacity * 2;
-        ArrayIterator<T>** newData = new ArrayIterator<T>*[newCapacity];
+        T* newData = new T[newCapacity];
         for (int i = 0; i < size; ++i) {
             newData[i] = data[i];
         }
@@ -70,7 +85,7 @@ private:
     void siftUp(int index) {
         while (index > 0) {
             int parent = (index - 1) / 2;
-            if (cmp(data[parent]->current(), data[index]->current())) {
+            if (cmp(data[parent], data[index])) {
                 break;
             }
             std::swap(data[parent], data[index]);
@@ -84,11 +99,11 @@ private:
             int rightChild = 2 * index + 2;
             int smallest = index;
 
-            if (leftChild < size && cmp(data[leftChild]->current(), data[smallest]->current())) {
+            if (leftChild < size && cmp(data[leftChild], data[smallest])) {
                 smallest = leftChild;
             }
 
-            if (rightChild < size && cmp(data[rightChild]->current(), data[smallest]->current())) {
+            if (rightChild < size && cmp(data[rightChild], data[smallest])) {
                 smallest = rightChild;
             }
 
@@ -103,35 +118,32 @@ private:
 
 public:
     Heap() : capacity(2), size(0) {
-        data = new ArrayIterator<T>*[capacity];
+        data = new T[capacity];
     }
 
     ~Heap() {
-        for (int i = 0; i < size; ++i) {
-            delete data[i];
-        }
         delete[] data;
     }
 
-    void add(ArrayIterator<T>* iterator) {
+    void add(const T& element) {
         if (size >= capacity) {
             resize();
         }
-        data[size] = iterator;
+        data[size] = element;
         siftUp(size);
         ++size;
     }
 
-    ArrayIterator<T>* extract() {
+    T extract() {
         if (size == 0) {
-            return nullptr;
+            return T();
         }
-        ArrayIterator<T>* minNode = data[0];
+        T minElement = data[0];
         data[0] = data[--size];
         if (size > 0) {
             siftDown(0);
         }
-        return minNode;
+        return minElement;
     }
 
     bool isEmpty() const {
@@ -142,52 +154,67 @@ public:
 template <typename T, typename Comparator = std::less<T>>
 void sort(Heap<T, Comparator>& heap) {
     while (!heap.isEmpty()) {
-        ArrayIterator<T>* minNode = heap.extract();
-        std::cout << minNode->current() << " ";
-        
-        minNode->moveNext();
-        if (minNode->hasNext()) {
-            heap.add(minNode);
-        } 
-        else {
-            delete minNode;
+        T minIt = heap.extract();
+        std::cout << minIt.current() << " ";
+
+        minIt.moveNext();
+        if (minIt.hasNext()) {
+            heap.add(minIt);
         }
     }
     std::cout << std::endl;
 }
 
 int main() {
-    // Пример использования с Video
-    // Heap<Video, VideoComparator> videoHeap;
-    
+    Heap<ArrayIterator<int>, ArrayIteratorComparator<int>> intHeap;
+
+    int K;
+    std::cin >> K;
+
+    for (int i = 0; i < K; i++) {
+        int size;
+        std::cin >> size;
+
+        int* arr = new int[size];
+        for (int j = 0; j < size; j++) {
+            std::cin >> arr[j];
+        }
+
+        intHeap.add(ArrayIterator<int>(arr, size));
+    }
+
+    sort(intHeap);
+
+
+
+    // Heap<ArrayIterator<Video>, ArrayIteratorComparator<Video, VideoComparator>> videoHeap;
+
     // Video arr1[] = {Video(6, 10, 100)};
     // Video arr2[] = {Video(50, 20, 200), Video(90, 30, 300)};
     // Video arr3[] = {Video(1, 5, 50), Video(10, 15, 150), Video(70, 25, 250)};
 
-    // videoHeap.add(new ArrayIterator<Video>(arr1, 1));
-    // videoHeap.add(new ArrayIterator<Video>(arr2, 2));
-    // videoHeap.add(new ArrayIterator<Video>(arr3, 3));
+    // videoHeap.add(ArrayIterator<Video>(arr1, 1));
+    // videoHeap.add(ArrayIterator<Video>(arr2, 2));
+    // videoHeap.add(ArrayIterator<Video>(arr3, 3));
 
     // sort(videoHeap);
 
-    Heap<int> intHeap;
-    
-    int K;
-    std::cin >> K; 
 
-    for (int i = 0; i < K; i++) {
-        int size;
-        std::cin >> size;  
+    // Heap<int> intHeap;
 
-        int* arr = new int[size];
-        for (int j = 0; j < size; j++) {
-            std::cin >> arr[j]; 
-        }
+    // int K;
+    // std::cin >> K;
 
-        intHeap.add(new ArrayIterator<int>(arr, size));
-    }
+    // for (int i = 0; i < K; i++) {
+    //     int num;
+    //     std::cin >> num; 
+    //     intHeap.add(num); 
+    // }
 
-    sort(intHeap);
+    // while (!intHeap.isEmpty()) {
+    //     std::cout << intHeap.extract() << " ";
+    // }
+    // std::cout << std::endl;
 
     return 0;
 }
