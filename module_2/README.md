@@ -49,3 +49,9 @@
 Для операции `-`:
 - OK, если элемент присутствовал во множестве и успешно удален
 - FAIL иначе
+
+## Пример
+
+| Ввод | Вывод |
+|------|-------|
+|+ hello<br>+ bye<br>? bye<br>+ bye<br>- bye<br>? bye<br>? hello   | OK<br>OK<br>OK<br>FAIL<br>OK<br>FAIL<br>OK  |
